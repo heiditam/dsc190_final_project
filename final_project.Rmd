@@ -1,0 +1,36 @@
+---
+title: "final_project"
+author: Student 1 & Student 2
+output: pdf_document
+date: "2024-12-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+public_data <- read.csv('./data/NA_HQ_public_data.csv')
+svi_data <- read.csv('./data/SVI2018_US.csv')
+us_cities <- read.csv('./data/uscities.csv')
+```
+
+# 0. Contribution Statement
+
+## Student 1
+
+Student 1 mostly worked on questions ...
+
+## Student 2
+
+Student 2 mostly worked on questions ...
+
+\pagenumber{arabic}
+
+# Introduction
+[write stuff here]
+
+### Data
+[write stuff here]
+
+### Objective
+[write stuff here]
+
+\pagebreak
