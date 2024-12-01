@@ -34,3 +34,80 @@ Student 2 mostly worked on questions ...
 [write stuff here]
 
 \pagebreak
+
+# Basic Analysis
+
+## Question 1: SIMPLE REGRESSION
+### Methods
+**Data Cleaning & Preparation**
+```{r echo=FALSE}
+quantile(svi_data$EP_UNEMP, p = c(0, 0.25, 0.5, 0.75, 1)) 
+sum(svi_data$EP_UNEMP == -999)
+# We seem to get some -999, which doesn't make sense in the context of estimated unemployment rates. In this column, we have 546 values / 72837 observations encoded as -999. 
+
+quantile(svi_data$EP_PCI, p = c(0, 0.25, 0.5, 0.75, 1)) 
+sum(svi_data$EP_PCI == -999)
+# The EP_PCI column also has 481 values encoded as -999. 
+
+# Change the -999 to NaNs
+svi_data$EP_UNEMP[svi_data$EP_UNEMP == -999] <- NA
+svi_data$EP_PCI[svi_data$EP_PCI == -999] <- NA
+
+# Filter out the NaNs and store them in another dataset called "data".
+data <- svi_data[complete.cases(svi_data$EP_PCI, svi_data$EP_UNEMP), ]
+```
+
+We want to create a regression model for ```EP_PCI```, the estimated per capita income, based on the estimated proportion of unemployment, ```EP_UNEMP```. We are predicting ```EP_PCI``` because it describes the _rate_ of unemployment and is normalized against population, unlike ```E_PCI```, which describes the estimate _count_ the unemployed.
+
+We will check the conditions for fitting a simple linear regression: linearity, homoscedasticity, independence, and normality.
+1. **Linearity** - Is there a linear relationship between our explanatory variable, ```EP_UNEMP``` and our response variable, ```EP_PCI```?
+```{r echo=FALSE}
+plot(data$EP_UNEMP, data$EP_PCI, 
+     xlab = 'Estimated Unemployment Rate', 
+     ylab = 'Estimated Per Capita Income', 
+     main = 'Trend in Estimated Per Capita Income Based on Estimated Unemp. Rate')
+```
+From our scatterplot, there appears to be a nonlinear negative trend between unemployment rate and estimated per capita income. As the estimated unemployment rate increases, the estimated per capita income exponentially decreases. 
+2. **Homoscedasticity**: Would the variance for the estimated unemployment rate be constant if we were to use a linear model?
+```{r echo=FALSE}
+model <- lm(EP_PCI ~ EP_UNEMP, data = data)
+res <- residuals(model)
+plot(data$EP_UNEMP, res, 
+     xlab = 'Estimated Unemployment Rate', 
+     ylab = 'Estimated Per Capita Income', 
+     main = 'Trend in Estimated Per Capita Income Based on Estimated Unemp. Rate')
+abline(0,0, col = 'red')
+```
+The residuals do _not_ have constant variance and so, the data is not homoscedastic.
+3. **Independence**: Because the residuals exhibit a clear pattern, independence may be violated.
+4. **Normality**: A QQ plot of our residuals shows our data deviates from the y = x line. Its slight curve upward suggests the distribution of our residuals are right-skewed.
+```{r echo = FALSE}
+qqnorm(res)
+qqline(res, col = 'red')
+```
+
+### Analysis
+
+```{r echo = FALSE}
+data$log_unemp <- log(data$EP_UNEMP)
+log_model <- lm(log_unemp ~ EP_PCI, data = data) # WHERE THE ERRORS START ROLLING IN
+
+predictions <- predict(log_model, newdata = data.frame(EP_UNEMP = data$EP_UNEMP))
+
+# Plot the scatterplot
+plot(data$EP_UNEMP, data$EP_PCI,
+     main = 'Gamma Ray Intensity as a Function of the Density of Polyethylene Blocks',
+     xlab = 'Density of Polyethylene Blocks',
+     ylab = 'Gamma Ray Intensity')
+
+lines(data$EP_UNEMP, predictions, col='red')
+
+# Model evaluation
+r_squared <- 1 - (rss / tss) # 0.998
+mse <- mean(res ** 2) # 35.345
+res <- residuals(log_model)
+rss <- sum(res ** 2) # residual sum of squares
+tss <- sum((data$EP_PCI - mean(data$EP_UNEMP)) ** 2)
+r_squared <- 1 - (rss / tss) # 0.998
+mse <- mean(res ** 2)
+```
