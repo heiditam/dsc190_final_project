@@ -89,25 +89,32 @@ qqline(res, col = 'red')
 ### Analysis
 
 ```{r echo = FALSE}
-data$log_unemp <- log(data$EP_UNEMP)
-log_model <- lm(log_unemp ~ EP_PCI, data = data) # WHERE THE ERRORS START ROLLING IN
+# double log scale
+data$log_unemp <- log(data$EP_UNEMP + 1e-6)
+data$log_pci <- log(data$EP_PCI + 1e-6)
 
-predictions <- predict(log_model, newdata = data.frame(EP_UNEMP = data$EP_UNEMP))
+log_model <- lm(log_pci ~ log_unemp, data = data)
+
+# change predictions back to the original scale
+predictions <- predict(log_model, newdata = data.frame(log_unemp = data$log_unemp))
+predictions <- exp(predictions)
 
 # Plot the scatterplot
-plot(data$EP_UNEMP, data$EP_PCI,
-     main = 'Gamma Ray Intensity as a Function of the Density of Polyethylene Blocks',
-     xlab = 'Density of Polyethylene Blocks',
-     ylab = 'Gamma Ray Intensity')
+plot(data$log_unemp, data$EP_PCI,
+     main = 'Estimated Per Capita Income as a Function of Log(Estimated Populated Rate)',
+     xlab = 'Log(Estimated Population Rate)',
+     ylab = 'Estimated Per Capita Income')
 
-lines(data$EP_UNEMP, predictions, col='red')
+lines(data$log_unemp, predictions, col='red')
 
 # Model evaluation
-r_squared <- 1 - (rss / tss) # 0.998
-mse <- mean(res ** 2) # 35.345
+# evaluating log model
 res <- residuals(log_model)
 rss <- sum(res ** 2) # residual sum of squares
-tss <- sum((data$EP_PCI - mean(data$EP_UNEMP)) ** 2)
-r_squared <- 1 - (rss / tss) # 0.998
-mse <- mean(res ** 2)
+tss <- sum((data$log_pci - mean(data$log_pci)) ** 2)
+r_squared <- 1 - (rss / tss) # 0.999
+mse <- mean(res ** 2) # 0.201
+
+# evaluating original model for interpretation purposes
+mse_original <- mean((data$EP_PCI - predictions)^2)
 ```
