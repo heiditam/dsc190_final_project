@@ -135,7 +135,38 @@ mse_original <- mean((data$EP_PCI - predictions)^2)
 With our log-transformed model, we have an MSE of about 0.201, which represents the averages squared difference between the actual values of the estimated per capita income and the predicted values. This number is pretty low, which indicates our model performed well. However, the MSE of our original model is 301,671,723, which means our model performed very poorly without the log transformation. 
 
 ### Conclusion
-Based on these findings, a linear model is not the most optimal model for our question, and a transformation is necessary to accurate fit and predict our data. 
+Based on these findings, the relationship between the estimated unemployment rate (EP_UNEMP) and the estimated per capita income (EP_PCI) do not meet the assumptions needed to fit a simple linear regression model without a transformation:
+1. **Linearity:** The scatterplot shows a nonlinear, exponential relationship between EP_UNEMP and EP_PCI, which suggests a simple linear model is not the most effective.
+2. **Homoscedasticity:** The residuals from the untransformed model show clear patterns and non-constant variance, which reaffirms the idea that our model does not perform well without a log transformation.
+3. **Independence:** Similar to the point addressed in #2, the residual plots show clear patterns, which indicate a basic linear model is not suitable for this distribution. 
+4. **Normality**: The QQ Plot demonstrates a slight right skew, which means that the residuals from a simple linear model are not normal, and so a transformation is necessary. 
+
+## Question 2: Distribution Analysis
+
+### Methods
+
+To see the distributions of the `EP_UNEMP` and `EP_PCI`, we graphed each feature as a histogram.
+
+```{r, echo=FALSE}
+par(mfrow=c(1, 2))
+hist(data$EP_UNEMP)
+
+hist(data$EP_PCI)
+```
+
+Additionally, we compared these distributions to other features that we believe would be related to this linear model, such as the percentage of people who are uninsured (`EP_UNINSUR`) and the percentage of mobile homes in the city (`EP_MOBILE`).
+
+```{r, echo=FALSE}
+# remove Nans from data
+data[data == -999] <- NA
+par(mfrow=c(1, 2))
+data <- data[complete.cases(data), ]
+hist(data$EP_UNINSUR)
+hist(data$EP_MOBILE)
+```
+
+### Analysis
+### Conclusion
 
 ## Question 2: Distribution Analysis
 
