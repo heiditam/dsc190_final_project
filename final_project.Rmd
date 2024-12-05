@@ -136,3 +136,9 @@ With our log-transformed model, we have an MSE of about 0.201, which represents 
 
 ### Conclusion
 Based on these findings, a linear model is not the most optimal model for our question, and a transformation is necessary to accurate fit and predict our data. 
+
+## Question 2: Distribution Analysis
+
+### Methods
+### Analysis
+### Conclusion
