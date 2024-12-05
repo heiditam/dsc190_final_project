@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 public_data <- read.csv('./data/NA_HQ_public_data.csv')
 svi_data <- read.csv('./data/SVI2018_US.csv')
 us_cities <- read.csv('./data/uscities.csv')
+library(pander)
 ```
 
 # 0. Contribution Statement
@@ -22,30 +23,36 @@ Student 1 mostly worked on questions ...
 
 Student 2 mostly worked on questions ...
 
-\pagenumber{arabic}
+\pagenumbering{arabic}
 
 # Introduction
-[write stuff here]
+
+Cities provide a glimpse into the local population of an area and are reflective of the culture and lifestyles in the region in which they are located. However, not all cities are created equal, as different socieoeconomic factors within the population and the surrounding region impact the quality of life of residents.
 
 ### Data
-[write stuff here]
+
+Our dataset consists of
 
 ### Objective
-[write stuff here]
+
+Our objective is to analyze and docuement the effects of a 
 
 \pagebreak
 
 # Basic Analysis
 
 ## Question 1: SIMPLE REGRESSION
+
 ### Methods
+
 **Data Cleaning & Preparation**
+
 ```{r echo=FALSE}
-quantile(svi_data$EP_UNEMP, p = c(0, 0.25, 0.5, 0.75, 1)) 
+pander(quantile(svi_data$EP_UNEMP, p = c(0, 0.25, 0.5, 0.75, 1)) )
 sum(svi_data$EP_UNEMP == -999)
 # We seem to get some -999, which doesn't make sense in the context of estimated unemployment rates. In this column, we have 546 values / 72837 observations encoded as -999. 
 
-quantile(svi_data$EP_PCI, p = c(0, 0.25, 0.5, 0.75, 1)) 
+pander(quantile(svi_data$EP_PCI, p = c(0, 0.25, 0.5, 0.75, 1)) )
 sum(svi_data$EP_PCI == -999)
 # The EP_PCI column also has 481 values encoded as -999. 
 
@@ -57,18 +64,23 @@ svi_data$EP_PCI[svi_data$EP_PCI == -999] <- NA
 data <- svi_data[complete.cases(svi_data$EP_PCI, svi_data$EP_UNEMP), ]
 ```
 
-We want to create a regression model for ```EP_PCI```, the estimated per capita income, based on the estimated proportion of unemployment, ```EP_UNEMP```. We are predicting ```EP_PCI``` because it describes the _rate_ of unemployment and is normalized against population, unlike ```E_PCI```, which describes the estimate _count_ the unemployed.
+We want to create a regression model for `EP_PCI`, the estimated per capita income, based on the estimated proportion of unemployment, `EP_UNEMP`. We are predicting `EP_PCI` because it describes the *rate* of unemployment and is normalized against population, unlike `E_PCI`, which describes the estimate *count* the unemployed.
 
 We will check the conditions for fitting a simple linear regression: linearity, homoscedasticity, independence, and normality.
-1. **Linearity** - Is there a linear relationship between our explanatory variable, ```EP_UNEMP``` and our response variable, ```EP_PCI```?
+
+1.  **Linearity** - Is there a linear relationship between our explanatory variable, `EP_UNEMP` and our response variable, `EP_PCI`?
+
 ```{r echo=FALSE}
 plot(data$EP_UNEMP, data$EP_PCI, 
      xlab = 'Estimated Unemployment Rate', 
      ylab = 'Estimated Per Capita Income', 
      main = 'Trend in Estimated Per Capita Income Based on Estimated Unemp. Rate')
 ```
-From our scatterplot, there appears to be a nonlinear negative trend between unemployment rate and estimated per capita income. As the estimated unemployment rate increases, the estimated per capita income exponentially decreases. 
-2. **Homoscedasticity**: Would the variance for the estimated unemployment rate be constant if we were to use a linear model?
+
+From our scatterplot, there appears to be a nonlinear negative trend between unemployment rate and estimated per capita income. As the estimated unemployment rate increases, the estimated per capita income exponentially decreases.
+
+2.  **Homoscedasticity**: Would the variance for the estimated unemployment rate be constant if we were to use a linear model?
+
 ```{r echo=FALSE}
 model <- lm(EP_PCI ~ EP_UNEMP, data = data)
 res <- residuals(model)
@@ -78,9 +90,13 @@ plot(data$EP_UNEMP, res,
      main = 'Trend in Estimated Per Capita Income Based on Estimated Unemp. Rate')
 abline(0,0, col = 'red')
 ```
-The residuals do _not_ have constant variance and so, the data is not homoscedastic.
-3. **Independence**: Because the residuals exhibit a clear pattern, independence may be violated.
-4. **Normality**: A QQ plot of our residuals shows our data deviates from the y = x line. Its slight curve upward suggests the distribution of our residuals are right-skewed.
+
+The residuals do *not* have constant variance and so, the data is not homoscedastic.
+
+3.  **Independence**: Because the residuals exhibit a clear pattern, independence may be violated.
+
+4.  **Normality**: A QQ plot of our residuals shows our data deviates from the y = x line. Its slight curve upward suggests the distribution of our residuals are right-skewed.
+
 ```{r echo = FALSE}
 qqnorm(res)
 qqline(res, col = 'red')
