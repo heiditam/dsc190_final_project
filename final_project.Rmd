@@ -35,7 +35,7 @@ Our dataset consists of
 
 ### Objective
 
-Our objective is to analyze and docuement the effects of a 
+Our objective is to analyze and document the effects of a 
 
 \pagebreak
 
@@ -126,11 +126,13 @@ lines(data$log_unemp, predictions, col='red')
 # Model evaluation
 # evaluating log model
 res <- residuals(log_model)
-rss <- sum(res ** 2) # residual sum of squares
-tss <- sum((data$log_pci - mean(data$log_pci)) ** 2)
-r_squared <- 1 - (rss / tss) # 0.999
 mse <- mean(res ** 2) # 0.201
 
 # evaluating original model for interpretation purposes
 mse_original <- mean((data$EP_PCI - predictions)^2)
 ```
+
+With our log-transformed model, we have an MSE of about 0.201, which represents the averages squared difference between the actual values of the estimated per capita income and the predicted values. This number is pretty low, which indicates our model performed well. However, the MSE of our original model is 301,671,723, which means our model performed very poorly without the log transformation. 
+
+### Conclusion
+Based on these findings, a linear model is not the most optimal model for our question, and a transformation is necessary to accurate fit and predict our data. 
