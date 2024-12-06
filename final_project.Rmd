@@ -52,7 +52,7 @@ pander(quantile(svi_data$EP_UNEMP, p = c(0, 0.25, 0.5, 0.75, 1)) )
 sum(svi_data$EP_UNEMP == -999)
 # We seem to get some -999, which doesn't make sense in the context of estimated unemployment rates. In this column, we have 546 values / 72837 observations encoded as -999. 
 
-pander(quantile(svi_data$EP_PCI, p = c(0, 0.25, 0.5, 0.75, 1)) )
+pander(quantile(svi_data$EP_PCI, p = c(0, 0.25, 0.5, 0.75, 1)))
 sum(svi_data$EP_PCI == -999)
 # The EP_PCI column also has 481 values encoded as -999. 
 
@@ -185,5 +185,48 @@ print(ks_test)
 ## Question 2: Distribution Analysis
 
 ### Methods
+```{r}
+library(dplyr)
+filtered <- public_data %>%
+  filter(
+    hq_country == "United States of America", # filter for only locations in the US
+    address_state != "", 
+    address_city != "",
+    address_state != 'DO NOT SEND LETTER', # doesn't have state or city
+    address_state != 'England' # London, England, mistakenly recorded as a city, state in the US
+  )
+
+# Some states are spelled out by name; change to state abbreviation
+filtered <- filtered %>%
+  mutate(address_state = recode(
+    address_state, 
+    "Massachusetts" = "MA", 
+    "Pennsylvania" = "PA",
+    'California' = 'CA',
+    'Wisconsin' = 'WI',
+    'Virginia' = 'VA',
+    'Texas' = 'TX',
+    'Ca' = 'CA',
+    'Utah' = 'UT',
+    'Arizona' = 'AZ',
+    'Chicago' = 'IL',
+    'Illinois' = 'IL',
+    'District of Columbia' = 'DC',
+    'Washington' = 'WA',
+    'Rhode Island' = 'RI',
+    'Colorado' = 'CO',
+    'COLORADO' = 'CO',
+    'Michigan' = 'MI',
+    'New York' = 'NY',
+    'Ohio' = 'OH',
+    'Delaware' = 'DE',
+    'Georgia' = 'GA',
+    'Minnesota' = 'MN',
+    'Missouri' = 'MO',
+    'Maryland' = 'MD'
+  ))
+
+filtered_df <- as.data.frame(filtered)
+```
 ### Analysis
 ### Conclusion
