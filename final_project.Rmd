@@ -166,6 +166,20 @@ hist(data$EP_MOBILE)
 ```
 
 ### Analysis
+
+We will conduct a **KS Analysis** to test whether the distribution of these features in our dataset are statistically similar.
+
+-   **H0:** The distribution of `EP_UNEMP` and `EP_PCI` are the same.
+
+-   **H1:** The distribution of `EP_UNEMP` and `EP_PCI` differ.
+
+We meet the conditions to perform this test because these features are independent from one another and the data is continuous.
+
+```{r}
+# KS test
+ks_test <- ks.test(data$EP_UNEMP, data$EP_PCI)
+print(ks_test)
+```
 ### Conclusion
 
 ## Question 2: Distribution Analysis
