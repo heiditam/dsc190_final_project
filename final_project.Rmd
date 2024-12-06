@@ -242,6 +242,15 @@ filtered <- filtered %>%
   ))
 
 filtered_df <- as.data.frame(filtered)
+
+# Merge the filtered df with the original public data
+merged_df <- merge(
+  x = filtered_df[, c('theme', 'address_state')],
+  y = data[, c('ST_ABBR', 'EP_PCI')],
+  by.x = 'address_state',
+  by.y = 'ST_ABBR',
+  all = FALSE
+)
 ```
 ### Analysis
 ### Conclusion
