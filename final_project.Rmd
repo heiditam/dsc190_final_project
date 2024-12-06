@@ -31,11 +31,11 @@ Cities provide a glimpse into the local population of an area and are reflective
 
 ### Data
 
-Our dataset consists of
+Our dataset consists of a collection of various studies done by the CDC in 2018 that detail various characteristics of a particular city and its demographics, ranging from the percentage of people that are unemployed to the percentage of civilian noninstitutionalized population with a disability.
 
 ### Objective
 
-Our objective is to analyze and document the effects of a 
+Our objective is to analyze and document any causal relationships between features in the dataset, with an emphasis on per capita income (EP_PCI) and unemployment rate (EP_UNEMP).
 
 \pagebreak
 
@@ -169,18 +169,33 @@ hist(data$EP_MOBILE)
 
 We will conduct a **KS Analysis** to test whether the distribution of these features in our dataset are statistically similar.
 
--   **H0:** The distribution of `EP_UNEMP` and `EP_PCI` are the same.
+-   **H0:** The distribution of both features are the same.
 
--   **H1:** The distribution of `EP_UNEMP` and `EP_PCI` differ.
+-   **H1:** The distribution of the features differ.
 
 We meet the conditions to perform this test because these features are independent from one another and the data is continuous.
 
 ```{r}
 # KS test
 ks_test <- ks.test(data$EP_UNEMP, data$EP_PCI)
-print(ks_test)
+pander(ks_test)
+
+ks_test <- ks.test(data$EP_UNEMP, data$EP_UNINSUR)
+pander(ks_test)
+
+ks_test <- ks.test(data$EP_UNEMP, data$EP_MOBILE)
+pander(ks_test)
+
+ks_test <- ks.test(data$EP_PCI, data$EP_UNINSUR)
+pander(ks_test)
+
+ks_test <- ks.test(data$EP_PCI, data$EP_MOBILE)
+pander(ks_test)
 ```
+
 ### Conclusion
+
+When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. However, when performing a KS test, there appears to be a difference between the distributions, which suggests that there is a 
 
 ## Question 2: Distribution Analysis
 
