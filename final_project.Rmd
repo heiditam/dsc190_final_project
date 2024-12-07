@@ -41,7 +41,7 @@ Our objective is to analyze and document any causal relationships between featur
 
 # Basic Analysis
 
-## Question 1: SIMPLE REGRESSION
+## **Question 1: SIMPLE REGRESSION** - Fit a regression line of the data predicting a city’s `EP_PCI` (estimated per capita income)* based on the estimated proportion of unemployment `EP_UNEMP`. How well does the regression line fit this relationship?
 
 ### Methods
 
@@ -145,7 +145,7 @@ Based on these findings, the relationship between the estimated unemployment rat
 
 4. **Normality**: The QQ Plot demonstrates a slight right skew, which means that the residuals from a simple linear model are not normal, and so a transformation is necessary. 
 
-## Question 2: Distribution Analysis
+## **Question 2: Distribution Analysis** - How do the distributions of `EP_PCI` and `EP_UNEMP` compare to one another and among other features?
 
 ### Methods
 
@@ -199,9 +199,9 @@ pander(ks_test)
 
 ### Conclusion
 
-When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. This is supported by our results from the KS test, as the test statistics for each test are greater than the alpha-value of 0.005. As a result, it is reasonable to conclude that these features are affect the value of `EP_UNEMP`. 
+When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. This is supported by our results from the KS test, as the test statistics for each test are greater than the alpha-value of 0.05. As a result, it is reasonable to conclude that these features affect the value of `EP_UNEMP`. 
 
-## Question 3: Hypothesis Testing
+## **Question 3: Hypothesis Testing** - Do cities in states with higher percentages of `EP_PCI` (estimated per capita income) have significantly fewer climate action responses compared to those with lower percentages?
 
 ### Methods
 H0: There is no significant difference between the number of climate action responses in states with higher percentages of EP_PCI compared to states with lower percentages. 
@@ -269,6 +269,36 @@ median_pci <- median(merged_df$EP_PCI, na.rm = TRUE)
 # Create a column that says whether the city's EP_PCI is higher or lower compared to the median value
 merged_df <- merged_df %>%
   mutate(pci_status = ifelse(EP_PCI > median_pci, 'Higher', 'Lower'))
+
+# Our data currently contains climate change and water action data. We will filter for climate action data since it is what we care about more. 
+climate_data <- merged_df %>%
+  filter(theme == 'Climate Change')
+
+# Create a table that summarizes the number of actions taken per each location that are related to climate change. 
+summary_df <- climate_data %>%
+  group_by(address_state, pci_status) %>%
+  summarize(
+    count = n(),
+    .groups = 'drop'
+  )
 ```
+The summary_df keeps track of the number of climate change-related actions taken for various cities grouped by state and PCI status (either higher or lower than the median value). 
+
+```{r echo = FALSE}
+# Is the distribution of counts of climate action normally distributed for values higher than the median?
+higher_counts <- summary_df$count[summary_df$pci_status == "Higher"]
+shapiro.test(higher_counts)
+
+lower_counts <- summary_df$count[summary_df$pci_status == "Lower"]
+shapiro.test(lower_counts)
+```
+Neither of these groups are normally distributed, so we need to use a Mann-Whitney U Test for comparing the mean counts of climate action for the groups with EP_PCI lower vs. higher than the median EP_PCI. 
+
+```{r echo = FALSE}
+wilcox.test(count ~ pci_status, data = summary_df, alternative = 'less')
+```
+Because (p = 0.3852) > (alpha = 0.05), we fail to reject the null hypothesis. Cities in states with higher percentages of EP_PCI _do not_ have significantly fewer climate action responses compared to those with lower percentages. 
 
 ### Conclusion
+We merged the SVI Data with the city data and performed data cleaning to keep track of the number of cities with an EP_PCI status higher or lower than the median EP_PCI status. Since Shapiro-Wilk tests showed that our data for each group - Higher and Lower - were both not normally distributed, we had to use a Mann Whitney U Test (aka Wilcoxon Rank Sum Test) to compare the two groups since it is a non-parametric statistical test. Since we ended with a p-value of 0.3852 > 0.05, we fail to reject the null hypothesis. This means that cities in states with higher percentages of EP_PCI _do not_ have significantly fewer climate action responses compared to those with lower percentages. 
+
