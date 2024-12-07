@@ -136,9 +136,13 @@ With our log-transformed model, we have an MSE of about 0.201, which represents 
 
 ### Conclusion
 Based on these findings, the relationship between the estimated unemployment rate (EP_UNEMP) and the estimated per capita income (EP_PCI) do not meet the assumptions needed to fit a simple linear regression model without a transformation:
+
 1. **Linearity:** The scatterplot shows a nonlinear, exponential relationship between EP_UNEMP and EP_PCI, which suggests a simple linear model is not the most effective.
+
 2. **Homoscedasticity:** The residuals from the untransformed model show clear patterns and non-constant variance, which reaffirms the idea that our model does not perform well without a log transformation.
+
 3. **Independence:** Similar to the point addressed in #2, the residual plots show clear patterns, which indicate a basic linear model is not suitable for this distribution. 
+
 4. **Normality**: The QQ Plot demonstrates a slight right skew, which means that the residuals from a simple linear model are not normal, and so a transformation is necessary. 
 
 ## Question 2: Distribution Analysis
@@ -195,7 +199,7 @@ pander(ks_test)
 
 ### Conclusion
 
-When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. However, when performing a KS test, there appears to be a difference between the distributions, which suggests that there is a 
+When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. This is supported by our results from the KS test, as the test statistics for each test are greater than the alpha-value of 0.005. As a result, it is reasonable to conclude that these features are affect the value of `EP_UNEMP`. 
 
 ## Question 2: Distribution Analysis
 
