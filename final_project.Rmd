@@ -302,3 +302,20 @@ Because (p = 0.3852) > (alpha = 0.05), we fail to reject the null hypothesis. Ci
 ### Conclusion
 We merged the SVI Data with the city data and performed data cleaning to keep track of the number of cities with an EP_PCI status higher or lower than the median EP_PCI status. Since Shapiro-Wilk tests showed that our data for each group - Higher and Lower - were both not normally distributed, we had to use a Mann Whitney U Test (aka Wilcoxon Rank Sum Test) to compare the two groups since it is a non-parametric statistical test. Since we ended with a p-value of 0.3852 > 0.05, we fail to reject the null hypothesis. This means that cities in states with higher percentages of EP_PCI _do not_ have significantly fewer climate action responses compared to those with lower percentages. 
 
+## **Advanced Analysis: Multiple Regression** - Fit a regression line of the data predicting a city’s `EP_PCI` (estimated per capita income) based on the estimated proportion of unemployment `EP_UNEMP`, city population, and city density. How well does the regression line fit this relationship?
+
+### Methods
+To fit a regression line as specified above, we will need the following variables from the `data` dataset:
+* Dependent Variable: EP_PCI - estimated per capita income
+* Independent Variables: 
+    * `EP_UNEMP` - estimated unemployment rate
+    * `E_TOTPOT` - estimated population
+    * city density - need to create new column based on `E_TOTPOT` / `AREA_SQMI` (city population / city area in square miles)
+We will make a new DataFrame to keep track of our variables, which we will call `advanced_df`.
+```{r echo = FALSE}
+advanced_df <- data[, c('EP_PCI', 'EP_UNEMP', 'E_TOTPOP', 'AREA_SQMI')]
+# Create a new column for the city density
+advanced_df$city_density <- advanced_df$E_TOTPOP / advanced_df$AREA_SQMI
+# Fit multiple regression linear model
+adv_model <- lm(EP_PCI ~ EP_UNEMP + E_TOTPOP + city_density, data = advanced_df)
+```
