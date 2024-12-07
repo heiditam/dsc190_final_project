@@ -31,7 +31,9 @@ Cities provide a glimpse into the local population of an area and are reflective
 
 ### Data
 
-Our dataset consists of a collection of various studies done by the CDC in 2018 that detail various characteristics of a particular city and its demographics, ranging from the percentage of people that are unemployed to the percentage of civilian noninstitutionalized population with a disability.
+Our primary dataset consists of a collection of various studies done by the CDC in 2018 that detail various characteristics of a particular city and its demographics, ranging from the percentage of people that are unemployed to the percentage of civilian noninstitutionalized population with a disability. There are 72836 entries.
+
+We include a secondary dataset in our **Advanced Analysis** section of our report that consists of the climate action surveys of major international corporations and if they responded to the survey or not. There are two surveys collected (Water and Climate Change) between 2018 and 2020, inclusive.
 
 ### Objective
 
@@ -163,8 +165,11 @@ Additionally, we compared these distributions to other features that we believe 
 ```{r, echo=FALSE}
 # remove Nans from data
 data[data == -999] <- NA
-par(mfrow=c(1, 2))
 data <- data[complete.cases(data), ]
+
+par(mfrow=c(1, 2))
+
+# plot histograms of EP_UNINSUR and EP_MOBILE
 hist(data$EP_UNINSUR)
 hist(data$EP_MOBILE)
 ```
@@ -179,27 +184,27 @@ We will conduct a **KS Analysis** to test whether the distribution of these feat
 
 We meet the conditions to perform this test because these features are independent from one another and the data is continuous.
 
-```{r}
+```{r, echo=FALSE}
 # KS test
-ks_test <- ks.test(data$EP_UNEMP, data$EP_PCI)
+ks_test <- ks.test(data$EP_UNEMP, data$EP_PCI, exact=TRUE)
 pander(ks_test)
 
-ks_test <- ks.test(data$EP_UNEMP, data$EP_UNINSUR)
+ks_test <- ks.test(data$EP_UNEMP, data$EP_UNINSUR, exact=TRUE)
 pander(ks_test)
 
-ks_test <- ks.test(data$EP_UNEMP, data$EP_MOBILE)
+ks_test <- ks.test(data$EP_UNEMP, data$EP_MOBILE, exact=TRUE)
 pander(ks_test)
 
-ks_test <- ks.test(data$EP_PCI, data$EP_UNINSUR)
+ks_test <- ks.test(data$EP_PCI, data$EP_UNINSUR, exact=TRUE)
 pander(ks_test)
 
-ks_test <- ks.test(data$EP_PCI, data$EP_MOBILE)
+ks_test <- ks.test(data$EP_PCI, data$EP_MOBILE, exact=TRUE)
 pander(ks_test)
 ```
 
 ### Conclusion
 
-When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. This is supported by our results from the KS test, as the test statistics for each test are greater than the alpha-value of 0.05. As a result, it is reasonable to conclude that these features affect the value of `EP_UNEMP`. 
+When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. However, our results from the KS test reflect the opposite conclusion, as the test statistics for each test are less than the test statistic at alpha = 0.05. As a result, we cannot conclude if the distributions of these features are statistically similar, and therefore we cannot conclude that they affect the value of `EP_UNEMP`. 
 
 ## **Question 3: Hypothesis Testing** - Do cities in states with higher percentages of `EP_PCI` (estimated per capita income) have significantly fewer climate action responses compared to those with lower percentages?
 
@@ -302,16 +307,56 @@ Because (p = 0.3852) > (alpha = 0.05), we fail to reject the null hypothesis. Ci
 ### Conclusion
 We merged the SVI Data with the city data and performed data cleaning to keep track of the number of cities with an EP_PCI status higher or lower than the median EP_PCI status. Since Shapiro-Wilk tests showed that our data for each group - Higher and Lower - were both not normally distributed, we had to use a Mann Whitney U Test (aka Wilcoxon Rank Sum Test) to compare the two groups since it is a non-parametric statistical test. Since we ended with a p-value of 0.3852 > 0.05, we fail to reject the null hypothesis. This means that cities in states with higher percentages of EP_PCI _do not_ have significantly fewer climate action responses compared to those with lower percentages. 
 
+## **Question 4: Correlation Analysis** - Is there a significant correlation between the `EP_PCI` and `EP_UNEMP`? How strong is the relationship, and what does it suggest about the role of unemployment in estimated per capita income?
+
+### Methods
+
+To understand the correlation between these two features, we calculate the covariance for the features.
+
+```{r, echo=FALSE}
+
+correlation <- cor(data$EP_PCI, data$EP_UNEMP, use = "complete.obs", method = "pearson")
+print(correlation)
+
+```
+
+### Analysis
+
+Next, we test the significance of their correlation with the following hypotheses:
+
+-   **H0:** The correlation between `EP_PCI` and `EP_UNEMP` is equal to zero.
+
+-   **H1:** The correlation between `EP_PCI` and `EP_UNEMP` is not equal to zero.
+
+```{r, echo=FALSE}
+cor_test <- cor.test(data$EP_PCI, data$EP_UNEMP, method = "pearson")
+pander(cor_test)
+```
+
+The correlation coefficient between `EP_PCI` and `EP_UNEMP` is **-0.4062332**, which signifies a somewhat strong negative correlation between the two features. After performing a significance test on this coefficient, it is clear that it is statistically significant, as the test statistic is **-119.4** and the p-value is **0**. The negative sign in the test statistic shows that the correlation between these two features is negative, with its large magnitude reinforcing this relationship. Additionally, the p-value tells us to reject the null hypothesis, providing evidence that the correlation between the two feature is not equal to zero. 
+
+### Conclusion
+
+We can conclude that there is a statistically significant negative correlation between `EP_PCI` and `EP_UNEMP`, which is supported by the significance test we performed on the calculated correlation coefficient. This shows us that as unemployment increases within a city's population, the city's per capita income is expected to decrease. Additionally, the relationship between these two features is rather strong, as the magnitude of the correlation coefficient is a signiificant magnitude below zero.
+
 ## **Advanced Analysis: Multiple Regression** - Fit a regression line of the data predicting a city’s `EP_PCI` (estimated per capita income) based on the estimated proportion of unemployment `EP_UNEMP`, city population, and city density. How well does the regression line fit this relationship?
 
 ### Methods
+
 To fit a regression line as specified above, we will need the following variables from the `data` dataset:
+
 * Dependent Variable: EP_PCI - estimated per capita income
+
 * Independent Variables: 
+
     * `EP_UNEMP` - estimated unemployment rate
+
     * `E_TOTPOT` - estimated population
+
     * city density - need to create new column based on `E_TOTPOT` / `AREA_SQMI` (city population / city area in square miles)
+
 We will make a new DataFrame to keep track of our variables, which we will call `advanced_df`.
+
 ```{r echo = FALSE}
 advanced_df <- data[, c('EP_PCI', 'EP_UNEMP', 'E_TOTPOP', 'AREA_SQMI')]
 # Create a new column for the city density
