@@ -204,7 +204,10 @@ When looking at our visualizations for the features, it appears that are is no s
 ## Question 2: Distribution Analysis
 
 ### Methods
-```{r}
+H0: There is no significant difference between the number of climate action responses in states with higher percentages of EP_PCI compared to states with lower percentages. 
+H1: States with higher percentages of EP_PCI have significantly _fewer_ climate action responses compared to states with lower percentages of EP_PCI. 
+
+```{r echo = FALSE}
 library(dplyr)
 filtered <- public_data %>%
   filter(
@@ -247,7 +250,7 @@ filtered <- filtered %>%
 
 filtered_df <- as.data.frame(filtered)
 
-# Merge the filtered df with the original public data
+# Merge the data filtered from the SVI DataFrame (shows the the socieoeconomic vulnerability index for various cities in the US) with the public city data. 
 merged_df <- merge(
   x = filtered_df[, c('theme', 'address_state')],
   y = data[, c('ST_ABBR', 'EP_PCI')],
@@ -256,5 +259,16 @@ merged_df <- merge(
   all = FALSE
 )
 ```
+We have just created a DataFrame that shows the state, whether they took a climate or water action, and the EP_PCI (estimated per capita income) for each city recorded. 
+NOTE: Cities are not included in our merged DataFrame since we are just interested in the cities' states. 
+
 ### Analysis
+```{r echo = FALSE}
+median_pci <- median(merged_df$EP_PCI, na.rm = TRUE)
+
+# Create a column that says whether the city's EP_PCI is higher or lower compared to the median value
+merged_df <- merged_df %>%
+  mutate(pci_status = ifelse(EP_PCI > median_pci, 'Higher', 'Lower'))
+```
+
 ### Conclusion
