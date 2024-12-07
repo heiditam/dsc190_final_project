@@ -201,7 +201,7 @@ pander(ks_test)
 
 When looking at our visualizations for the features, it appears that are is no significant difference between their distributions, as they are all right-skewed. This is supported by our results from the KS test, as the test statistics for each test are greater than the alpha-value of 0.005. As a result, it is reasonable to conclude that these features are affect the value of `EP_UNEMP`. 
 
-## Question 2: Distribution Analysis
+## Question 3: Hypothesis Testing
 
 ### Methods
 H0: There is no significant difference between the number of climate action responses in states with higher percentages of EP_PCI compared to states with lower percentages. 
