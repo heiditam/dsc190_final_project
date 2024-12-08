@@ -358,9 +358,34 @@ To fit a regression line as specified above, we will need the following variable
 We will make a new DataFrame to keep track of our variables, which we will call `advanced_df`.
 
 ```{r echo = FALSE}
+# data cleaning
 advanced_df <- data[, c('EP_PCI', 'EP_UNEMP', 'E_TOTPOP', 'AREA_SQMI')]
+clean_advanced_df <- advanced_df[complete.cases(advanced_df), ] # filter NaNs
+clean_advanced_df <- clean_advanced_df[clean_advanced_df$AREA_SQMI != 0, ] # avoid having squared area = 0, which could lead to division by 0 errors
 # Create a new column for the city density
-advanced_df$city_density <- advanced_df$E_TOTPOP / advanced_df$AREA_SQMI
+clean_advanced_df$city_density <- clean_advanced_df$E_TOTPOP / clean_advanced_df$AREA_SQMI
 # Fit multiple regression linear model
-adv_model <- lm(EP_PCI ~ EP_UNEMP + E_TOTPOP + city_density, data = advanced_df)
+adv_model <- lm(EP_PCI ~ EP_UNEMP + E_TOTPOP + city_density, data = clean_advanced_df)
+summary(adv_model)
 ```
+Our multiple linear regression model fits the line EP_PCI-hat = 42000 - 1525 * EP_UNEMP -0.1309 * E_TOTPOP + 0.115 * city_density. Here is how we would interpret our model: 
+* **Slope of EP_UNEMP**: For every 1% increase in unemployed people, we would expect income to decrease by $1,525 per capita. 
+* **Slope of E_TOTPOP**: For every additional person in the total population, we would expect income to decrease by about $0.1309 per capita.
+* **Slope of city_density**: For every additional person per square mile, we would expect income to increase by about $0.115 per capita. 
+* **Intercept**: All factors held constant, we would expect the income to be $4,200 per capita if the unemployment rate is 0, total population is 0, and city density is 0. However, it is important to note this involves extrapolation and is inappropriate to infer in this context. 
+
+### Analysis
+```{r echo = FALSE}
+plot(adv_model)
+```
+
+A multiple linear regression model is probably also not the best choice for the model because the residuals vs. fitted scatterplot show a clear pattern trending upward as the fitted values increase. Additionally, in the QQ Plot, the residuals do not always fall approximately along the diagonal and indicate normality; instead, after the theoretical quantile of 2,the the residuals curve upward, which demonstrate a distribution of the residuals is right-skewed. In the scale-location graph, the residuals do not appear to be evenly spaced, and in the residuals vs leverage graph, it is evident that some residuals are associated with a very high leverage. 
+
+### Conclusion
+```{r echo = FALSE}
+predictions <- predict(adv_model, newdata = clean_advanced_df)
+residuals <- clean_advanced_df$EP_PCI - predictions
+rmse <- sqrt(mean(residuals ^ 2))
+rmse
+```
+With an RMSE of 15,289.38, our multiple linear regression model is not very predictive of our data. It is better to use a different type of model. 
