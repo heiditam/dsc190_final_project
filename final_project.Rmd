@@ -105,7 +105,7 @@ qqline(res, col = 'red')
 ```
 
 ### Analysis
-
+To transform the data, we will take the log of `EP_UNEMP` and `EP_PCI` because log transformations are often used to stabilize variance and help make data more suitable for regression. 
 ```{r echo = FALSE}
 # double log scale
 data$log_unemp <- log(data$EP_UNEMP + 1e-6)
@@ -343,30 +343,103 @@ We can conclude that there is a statistically significant negative correlation b
 
 ### Methods
 
+We used XGBoost to optimize our prediction of EP_PCI, the estimated per capita income. 
+
+### Data Preparation
+
 To fit a regression line as specified above, we will need the following variables from the `data` dataset:
 
 * Dependent Variable: EP_PCI - estimated per capita income
 
 * Independent Variables: 
 
-    * `EP_UNEMP` - estimated unemployment rate
-
-    * `E_TOTPOT` - estimated population
-
-    * city density - need to create new column based on `E_TOTPOT` / `AREA_SQMI` (city population / city area in square miles)
-
-We will make a new DataFrame to keep track of our variables, which we will call `advanced_df`.
+    * `E_NOHSDP` - percentage of people without a high school diploma (age 25+)
+    * `EP_DISAB` - percentage of civilian non-institutionalized population who are disabled
+    * `EP_MINRTY` - percentage of minority people
+We choose these features because education is one of the strongest predictors of income, and we would expect people without a high school diploma to have fewer opportunities for job growth and thus, make a lower income than those with a higher degree. Disability status may also affect one's ability to work full time, leading them to make lower incomes. Cities with a higher percentage of disabled individuals may have a lower per capita income. Thirdly, minority populations may deal with socioeconomic disparities and restricted opportunities to education, wealth, and jobs. We also expect there to be a relationship between the proportion of minorities and income. Perhaps cities with a higher proportion of minorities may also have a lower per capita income. 
 
 ```{r echo = FALSE}
-# data cleaning
-advanced_df <- data[, c('EP_PCI', 'EP_UNEMP', 'E_TOTPOP', 'AREA_SQMI')]
-clean_advanced_df <- advanced_df[complete.cases(advanced_df), ] # filter NaNs
-clean_advanced_df <- clean_advanced_df[clean_advanced_df$AREA_SQMI != 0, ] # avoid having squared area = 0, which could lead to division by 0 errors
-# Create a new column for the city density
-clean_advanced_df$city_density <- clean_advanced_df$E_TOTPOP / clean_advanced_df$AREA_SQMI
-# Fit multiple regression linear model
-adv_model <- lm(EP_PCI ~ EP_UNEMP + E_TOTPOP + city_density, data = clean_advanced_df)
-summary(adv_model)
+boxplot(data$EP_PCI, horizontal = TRUE, xlab = "Per Capita Income (EP_PCI)")
+```
+As you can see, there are many outliers in our data, so we removed data points that were below the 25th percentile or above the 75th percentile, per the IQR Rule. 
+
+```{r echo = FALSE}
+library(xgboost)
+library(caret)
+
+orig_features <- data[, c('EP_NOHSDP', 'EP_DISABL', 'EP_MINRTY')]
+orig_target <- data$EP_PCI
+
+Q1 <- quantile(orig_target, 0.25)
+Q3 <- quantile(orig_target, 0.75)
+IQR <- Q3 - Q1
+
+lower_bound <- Q1 - 1.5 * IQR
+upper_bound <- Q3 + 1.5 * IQR
+
+data_filtered <- data[orig_target >= lower_bound & orig_target <= upper_bound, ]
+
+# Update our features & target! 
+features <- data_filtered[, c('EP_NOHSDP', 'EP_DISABL', 'EP_MINRTY')]
+target <- data_filtered$EP_PCI
+```
+### Model Training
+With the aid of the package Caret, we used 80% of the original dataset for training and the remaining 20% for testing. Our model used the objective function of regression with mean squared error and our evaluation metric was RMSE for better interpretability. 
+``` {r echo = FALSE}
+# Split into train + test
+set.seed(123)
+train_index <- createDataPartition(target, p = 0.8, list = FALSE)
+train_features <- features[train_index, ]
+train_target <- target[train_index]
+test_features <- features[-train_index, ]
+test_target <- target[-train_index]
+
+# convert to matrices
+train_matrix <- as.matrix(train_features)
+test_matrix <- as.matrix(test_features)
+
+# DMatrix objects
+dtrain <- xgb.DMatrix(data = train_matrix, label = train_target)
+dtest <- xgb.DMatrix(data = test_matrix, label = test_target)
+
+# hyperparameters
+params <- list(
+    objective = "reg:squarederror",
+    eval_metric = "rmse",
+    eta = 0.1,
+    max_depth = 6,
+    subsample = 0.8,
+    colsample_bytree = 0.8
+)
+```
+The hyperparameters we used were learning rate = 0.1, max_depth = 6, subsample = 0.8 (80% of the samples used per boosting round to prevent overfitting), and colsample_bytree = 0.8 (80% of the features used per tree).
+
+``` {r echo = FALSE}
+# Train the model
+xgb_model <- xgb.train(
+    params = params,
+    data = dtrain,
+    nrounds = 500,
+    watchlist = list(train = dtrain, test = dtest),
+    early_stopping_rounds = 10,
+    verbose = 1
+)
+
+# PREDICTIONS
+predictions <- predict(xgb_model, test_matrix)
+
+# MODEL EVALUATIONS
+# RMSE
+rmse <- sqrt(mean((test_target - predictions) ^ 2))
+cat("RMSE:", rmse, "\n")
+
+# MAE
+mae <- mean(abs(test_target - predictions))
+cat("MAE:", mae, "\n")
+
+# FEATURE IMPORTANCE
+importance <- xgb.importance(feature_names = colnames(train_matrix), model = xgb_model)
+xgb.plot.importance(importance)
 ```
 Our multiple linear regression model fits the line EP_PCI-hat = 42000 - 1525 * EP_UNEMP -0.1309 * E_TOTPOP + 0.115 * city_density. Here is how we would interpret our model: 
 * **Slope of EP_UNEMP**: For every 1% increase in unemployed people, we would expect income to decrease by $1,525 per capita. 
@@ -381,6 +454,10 @@ plot(adv_model)
 
 A multiple linear regression model is probably also not the best choice for the model because the residuals vs. fitted scatterplot show a clear pattern trending upward as the fitted values increase. Additionally, in the QQ Plot, the residuals do not always fall approximately along the diagonal and indicate normality; instead, after the theoretical quantile of 2,the the residuals curve upward, which demonstrate a distribution of the residuals is right-skewed. In the scale-location graph, the residuals do not appear to be evenly spaced, and in the residuals vs leverage graph, it is evident that some residuals are associated with a very high leverage. 
 
+```{r echo = FALSE}
+
+```
+
 ### Conclusion
 ```{r echo = FALSE}
 predictions <- predict(adv_model, newdata = clean_advanced_df)
@@ -392,6 +469,6 @@ With an RMSE of 15,289.38, our multiple linear regression model is not very pred
 
 ## Conclusion & Discussion
 
-In conclusion, our analysis of the causal relationship between per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`) in the socioeconomic vulnerability index dataset reveal that there is a strong negative correlation between them, though a linear regression may not be the best model to capture the nuances of their relationshiip. Additionally, the distributions of these features appear to be similar, but there is no statistical evidence to support this. In our advanced analysis, we attempt to fit a multiple linear regression with the addition of new features that describe the population distribution and density of a city.
+In conclusion, our analysis of the causal relationship between per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`) in the socioeconomic vulnerability index dataset reveal that there is a strong negative correlation between them, though a linear regression may not be the best model to capture the nuances of their relationship. Additionally, the distributions of these features appear to be similar, but there is no statistical evidence to support this. In our advanced analysis, we attempt to fit a multiple linear regression with the addition of new features that describe the population distribution and density of a city.
 
-One limiitation that we noticed with our data was missing data in the socieoeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. 
+One limititation that we noticed with our data was missing data in the socieoeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. 
