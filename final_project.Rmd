@@ -39,7 +39,7 @@ We include a secondary dataset in our **Advanced Analysis** section of our repor
 
 ### Objective
 
-Our objective is to analyze and document any causal relationships between features in the dataset, with an emphasis on per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`).
+Our objective is to analyze and document any causal relationships between city demographics in the dataset, with an emphasis on per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`).
 
 \pagebreak
 
@@ -501,6 +501,7 @@ abline(h = 0, col = "red")
 
 ## Conclusion & Discussion
 
-In conclusion, our analysis of the causal relationship between per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`) in the socioeconomic vulnerability index dataset reveal that there is a strong negative correlation between them, though a linear regression may not be the best model to capture the nuances of their relationship. Additionally, the distributions of these features appear to be similar, but there is no statistical evidence to support this. In our advanced analysis, we attempt to fit a multiple linear regression with the addition of new features that describe the population distribution and density of a city.
 
-One limitation that we noticed with our data was missing data in the socioeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. 
+In conclusion, our analysis of the causal relationship between per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`) in the socioeconomic vulnerability index dataset reveal that there is a strong negative correlation between them, though a linear regression may not be the best model to capture the nuances of their relationship. Additionally, the distributions of these features appear to be similar, but there is no statistical evidence to support this. In our advanced analysis, we attempt to fit a multiple linear regression with the addition of new features that describe the population distribution and density of a city. Through further testing, we also discovered that the estimated percentage of no high school diploma among residents of a city had a significant correlation with the per capita income, and once included in our multiple linear regression, was able to explain a lot of the error we were experiencing in our previous models. 
+
+One limitation that we noticed with our data was missing data in the socioeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. Another limitation that we noticed was that many of the features in the dataset were highly related to one another, raising possible issues of multicollinearity in our predictive models.
