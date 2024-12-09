@@ -1,8 +1,10 @@
 ---
 title: "final_project"
-author: Student 1 & Student 2
-output: pdf_document
+author: "Student 1 & Student 2"
 date: "2024-12-01"
+output:
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,11 +19,11 @@ library(pander)
 
 ## Student 1
 
-Student 1 mostly worked on questions ...
+Student 1 mostly worked on questions 1, 3, and the advanced analysis. 
 
 ## Student 2
 
-Student 2 mostly worked on questions ...
+Student 2 mostly worked on questions 2, 4, and the intro/conclusion. 
 
 \pagenumbering{arabic}
 
