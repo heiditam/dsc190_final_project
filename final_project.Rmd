@@ -441,34 +441,64 @@ cat("MAE:", mae, "\n")
 importance <- xgb.importance(feature_names = colnames(train_matrix), model = xgb_model)
 xgb.plot.importance(importance)
 ```
-Our multiple linear regression model fits the line EP_PCI-hat = 42000 - 1525 * EP_UNEMP -0.1309 * E_TOTPOP + 0.115 * city_density. Here is how we would interpret our model: 
-* **Slope of EP_UNEMP**: For every 1% increase in unemployed people, we would expect income to decrease by $1,525 per capita. 
-* **Slope of E_TOTPOP**: For every additional person in the total population, we would expect income to decrease by about $0.1309 per capita.
-* **Slope of city_density**: For every additional person per square mile, we would expect income to increase by about $0.115 per capita. 
-* **Intercept**: All factors held constant, we would expect the income to be $4,200 per capita if the unemployment rate is 0, total population is 0, and city density is 0. However, it is important to note this involves extrapolation and is inappropriate to infer in this context. 
+The plot importance graph in the XG Boost package shows the importance of each of the features we used: earning a high school degree - 0.667, disability status - 0.167, minority group - 0.166. It seems as though the feature of having a high school degree `EP_NOHSDP` had the strongest impact on our model. 
 
 ### Analysis
 ```{r echo = FALSE}
-plot(adv_model)
+cross_val <- xgb.cv(
+  params = params,
+  data = dtrain,
+  nrounds = 500,
+  nfold = 5,
+  metrics = 'rmse',
+  early_stopping_rounds = 10,
+  verbose = 1,
+  prediction = TRUE
+)
+best_nrounds <- cross_val$best_iteration
+cat("Best number of rounds:", best_nrounds, "\n") # 56
 ```
-
-A multiple linear regression model is probably also not the best choice for the model because the residuals vs. fitted scatterplot show a clear pattern trending upward as the fitted values increase. Additionally, in the QQ Plot, the residuals do not always fall approximately along the diagonal and indicate normality; instead, after the theoretical quantile of 2,the the residuals curve upward, which demonstrate a distribution of the residuals is right-skewed. In the scale-location graph, the residuals do not appear to be evenly spaced, and in the residuals vs leverage graph, it is evident that some residuals are associated with a very high leverage. 
-
+The best number of rounds we can use in our model is about 56. We will train our model again with the new optimal best number of rounds. 
 ```{r echo = FALSE}
+# Train the model
+new_model <- xgb.train(
+    params = params,
+    data = dtrain,
+    nrounds = best_nrounds,
+    watchlist = list(train = dtrain, test = dtest),
+    early_stopping_rounds = 10,
+    verbose = 1
+)
 
+# PREDICTIONS
+new_predictions <- predict(xgb_model, test_matrix)
+
+# MODEL EVALUATIONS
+# RMSE
+new_rmse <- sqrt(mean((test_target - predictions) ^ 2))
+cat("RMSE:", rmse, "\n")
+
+# MAE
+new_mae <- mean(abs(test_target - predictions))
+cat("MAE:", mae, "\n")
 ```
+After performing cross-validation, our model has an RMSE of about 7224.625 and an MAE of about 5243.471.
+Our **normalized RMSE** would be 7224.625 / `mean(target)` = **0.2439**, which means that the model's predictions deviate from the actual values by about 24.39% on average. The **coefficient of variation (CV)** for this problem would be `sd(target) / mean(target)` = 0.3826. 1 - 0.2439/0.3826 = **0.3624**, which means our normalized RMSE is > 30% smaller than the coefficient of variation. This indicates that our model _does_ explain a significant amount of the variance in the data. 
 
 ### Conclusion
+- At first glance, the model appears to have an extremely high RMSE, but when normalized against the mean(target), our model is actually reasonably accurate in predicting per capita income. 
+- From the feature importance, we saw that `EP_NOHSDP` had the highest gain, which means it has the greatest contribution to reducing prediction errors. Contextually, this makes sense because low-income people may not be able to afford tuition at a university and with a lower degree, have a smaller skillset and thus, be paid less. 
+- Since `EP_NOHSDP` was the most significant predictor, tutoring programs that help students in grades K-12 grasp a better understanding of their coursework may improve per capita income in the populaton since more students would be able to achieve high school diplomas. 
+
 ```{r echo = FALSE}
-predictions <- predict(adv_model, newdata = clean_advanced_df)
-residuals <- clean_advanced_df$EP_PCI - predictions
-rmse <- sqrt(mean(residuals ^ 2))
-rmse
+res <- test_target - predictions
+plot(res, main = "Residuals of the Model", xlab = "Per Capita Income", ylab = "Residuals")
+abline(h = 0, col = "red")
 ```
-With an RMSE of 15,289.38, our multiple linear regression model is not very predictive of our data. It is better to use a different type of model. 
+- Our model does a fairly good job at predicting! The residuals are roughly randomly scattered around 0. The model does appear to have some fanning present as income increases after $8,000, but is roughly still homoscedastic. 
 
 ## Conclusion & Discussion
 
 In conclusion, our analysis of the causal relationship between per capita income (`EP_PCI`) and unemployment rate (`EP_UNEMP`) in the socioeconomic vulnerability index dataset reveal that there is a strong negative correlation between them, though a linear regression may not be the best model to capture the nuances of their relationship. Additionally, the distributions of these features appear to be similar, but there is no statistical evidence to support this. In our advanced analysis, we attempt to fit a multiple linear regression with the addition of new features that describe the population distribution and density of a city.
 
-One limititation that we noticed with our data was missing data in the socieoeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. 
+One limitation that we noticed with our data was missing data in the socioeconomic vulnerability index dataset. Although we removed missing data, the resulting data could underestimate or overestimate certain features of the dataset, which inhibits our ability to make accurate calculations. 
